@@ -1,0 +1,5 @@
+rulepolicym list rulegroup
+rulepolicym list rules -g groupname
+rulepolicym copy rulegroup1 rulegroup2
+rulepolicym rm rule rulename 
+rulepolicym rm rulegroup rulegroupname
