@@ -1,6 +1,5 @@
 package pkg
 
-
 import (
 	"encoding/base64"
 	"encoding/json"
@@ -12,15 +11,20 @@ import (
 
 const (
 	Sso_Url = "http://30.1.64.241/dce/sso/login"
-	Api_Monitor_Url = "http://30.1.64.241/dce/proxy/clusters/17263D42-22D8-45B1-45BB-D9451377FB56/plugin/29002/api/monitor/" 
-
 )
 
 type SsoResp struct {
 	Access_Token string `json:"access_token"`
 }
 
-func GetToken() (SsoResp, error) {
+func apimonitorheader(accesstoken, authtoken string) map[string]string {
+	return map[string]string{
+		"Authorization": authtoken,
+		"Cookie":        fmt.Sprintf("X-DCE-Access-Token=%s", accesstoken),
+	}
+}
+
+func GetAccessToken() (SsoResp, error) {
 	// from the OS environment to get username and password
 	username := os.Getenv("DCE_USERNAME")
 	password := os.Getenv("DCE_PASSWORD")
@@ -29,7 +33,7 @@ func GetToken() (SsoResp, error) {
 
 	ssoreq := Request{
 		Method: "POST",
-		Url: Sso_Url,
+		Url:    Sso_Url,
 		Headers: map[string]string{
 			"Authorization": fmt.Sprintf("Basic %s", userpassbase64),
 		},
@@ -42,33 +46,31 @@ func GetToken() (SsoResp, error) {
 }
 
 type AuthResp struct {
-	Token string `json:"token"`
+	Token   string  `json:"token"`
 	Account Account `json:"account"`
-
 }
 
 type Account struct {
-	Emails []string `json:"emails"`
-	ID string `json:"id"`
-	Is_Admin bool `json:"is_admin"`
-    Language string `json:"language"`
-    Name string `json:"name"`
-	Namespaces []string `json:"namespaces"`
-	NickName string `json:"nick_name"`
-	Phone string `json:"phone"`
-	Primary_Mail string `json:"primary_mail"`
-	Status string `json:"status"`
+	Emails       []string `json:"emails"`
+	ID           string   `json:"id"`
+	Is_Admin     bool     `json:"is_admin"`
+	Language     string   `json:"language"`
+	Name         string   `json:"name"`
+	Namespaces   []string `json:"namespaces"`
+	NickName     string   `json:"nick_name"`
+	Phone        string   `json:"phone"`
+	Primary_Mail string   `json:"primary_mail"`
+	Status       string   `json:"status"`
 }
 
-func GetAuth(access_token string) (AuthResp, error) {
+func GetAuthToken(access_token string) (AuthResp, error) {
 
-    getauth_req := Request{
+	getauth_req := Request{
 		Method: "POST",
-		Url: Api_Monitor_Url+"auth",
+		Url:    Api_Monitor_Url + "auth",
 		Headers: map[string]string{
 			"X-DCE-ACCESS-TOKEN": access_token,
 		},
-        
 	}
 	respbody, err := NewRequest[AuthResp](getauth_req)
 	if err != nil {
@@ -78,23 +80,21 @@ func GetAuth(access_token string) (AuthResp, error) {
 }
 
 type Request struct {
-	Method string
-	Url string
-	Headers map[string]string
+	Method      string
+	Url         string
+	Headers     map[string]string
 	QueryParams map[string]string
-	Body io.Reader
 }
 
-type Response interface{
-	SsoResp | AuthResp | RuleGroupResp 
+type Response interface {
+	SsoResp | AuthResp | RuleGroupResp
 }
 
-
-func NewRequest[R Response](request Request) (R,error) {
+func NewRequest[R Response](request Request) (R, error) {
 	// do a request
 	var respbody R
 	client := &http.Client{}
-	req, err := http.NewRequest(request.Method, request.Url, request.Body)
+	req, err := http.NewRequest(request.Method, request.Url, nil)
 	if err != nil {
 		return respbody, fmt.Errorf("create new request to %s with err:%w", request.Url, err)
 
@@ -103,12 +103,10 @@ func NewRequest[R Response](request Request) (R,error) {
 		req.Header.Add(k, v)
 	}
 	q := req.URL.Query()
-    for k, v := range request.QueryParams {
+	for k, v := range request.QueryParams {
 		q.Add(k, v)
 	}
 	req.URL.RawQuery = q.Encode()
-
-
 
 	//fmt.Printf("%#v",req.Header)
 	resp, err := client.Do(req)

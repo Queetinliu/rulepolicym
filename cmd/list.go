@@ -1,6 +1,5 @@
 /*
 Copyright © 2025 NAME HERE <EMAIL ADDRESS>
-
 */
 package cmd
 
@@ -14,7 +13,7 @@ import (
 var listCmd = &cobra.Command{
 	Use:   "list",
 	Short: "list rulegroups or rules in a rulegroup",
-	Long: `list rulegroups,or list rules in a specific rulegroup`,
+	Long:  `list rulegroups,or list rules in a specific rulegroup`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("list called")
 	},
@@ -32,5 +31,5 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// listCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	
+
 }

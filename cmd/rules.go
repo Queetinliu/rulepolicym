@@ -1,6 +1,5 @@
 /*
 Copyright © 2025 NAME HERE <EMAIL ADDRESS>
-
 */
 package cmd
 
@@ -25,6 +24,8 @@ to quickly create a Cobra application.`,
 	},
 }
 
+var rulegroup *string
+
 func init() {
 	listCmd.AddCommand(rulesCmd)
 
@@ -37,5 +38,5 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// rulesCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	rulesCmd.Flags().StringP("rulegroup", "g", "", "specific the rulegroup name(required)")
+	rulegroup = rulesCmd.Flags().StringP("rulegroup", "g", "", "specific the rulegroup name(required)")
 }
