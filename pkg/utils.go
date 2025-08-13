@@ -6,11 +6,14 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 )
 
 const (
-	Sso_Url = "http://30.1.64.241/dce/sso/login"
+	// Sso_Url = "http://30.1.64.241/dce/sso/login"
+	Sso_Path         = "/dce/sso/login"
+	Dce_Url_Env_Name = "DCE_URL"
 )
 
 type SsoResp struct {
@@ -24,8 +27,18 @@ func apimonitorheader(accesstoken, authtoken string) map[string]string {
 	}
 }
 
+func GetApiMonitorUrl(pathelements ...string) (string, error) {
+	newpathelements := append([]string{os.Getenv("ApiMonitor_Path_Prefix")}, pathelements...)
+	return url.JoinPath(os.Getenv(Dce_Url_Env_Name), newpathelements...)
+}
+
 func GetAccessToken() (SsoResp, error) {
 	// from the OS environment to get username and password
+	dceurl := os.Getenv(Dce_Url_Env_Name)
+	Sso_Url, err := url.JoinPath(dceurl, Sso_Path)
+	if err != nil {
+		return SsoResp{}, fmt.Errorf("url join path %s %s with err:%w", dceurl, Sso_Path, err)
+	}
 	username := os.Getenv("DCE_USERNAME")
 	password := os.Getenv("DCE_PASSWORD")
 	userpass := username + ":" + password
@@ -64,10 +77,14 @@ type Account struct {
 }
 
 func GetAuthToken(access_token string) (AuthResp, error) {
-
+	urlpath, err := GetApiMonitorUrl("auth")
+	if err != nil {
+		return AuthResp{}, err
+	}
+	fmt.Println(urlpath)
 	getauth_req := Request{
 		Method: "POST",
-		Url:    Api_Monitor_Url + "auth",
+		Url:    urlpath,
 		Headers: map[string]string{
 			"X-DCE-ACCESS-TOKEN": access_token,
 		},
@@ -84,17 +101,18 @@ type Request struct {
 	Url         string
 	Headers     map[string]string
 	QueryParams map[string]string
+	Body        io.Reader
 }
 
 type Response interface {
-	SsoResp | AuthResp | RuleGroupResp
+	SsoResp | AuthResp | RuleGroupsResp | RuleGroupResp | struct{}
 }
 
 func NewRequest[R Response](request Request) (R, error) {
 	// do a request
 	var respbody R
 	client := &http.Client{}
-	req, err := http.NewRequest(request.Method, request.Url, nil)
+	req, err := http.NewRequest(request.Method, request.Url, request.Body)
 	if err != nil {
 		return respbody, fmt.Errorf("create new request to %s with err:%w", request.Url, err)
 
@@ -119,6 +137,11 @@ func NewRequest[R Response](request Request) (R, error) {
 		return respbody, err
 	}
 	//fmt.Println(string(bodyText))
+	// if
+	if _,ok := any(respbody).(struct{});ok{
+return respbody,nil
+	}
+		
 	err = json.Unmarshal(bodyText, &respbody)
 	if err != nil {
 		return respbody, err

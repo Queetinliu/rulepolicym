@@ -5,22 +5,29 @@ package cmd
 
 import (
 	"fmt"
+	"rulepolicym/pkg"
 
 	"github.com/spf13/cobra"
 )
-
+var rmrulegroup *string
 // ruleCmd represents the rule command
 var ruleCmd = &cobra.Command{
 	Use:   "rule",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "delete a rule from a rulegroup",
+	Long:  `delete a rule from the specified rulegroup`,
+	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("rule called")
+		accesstoken, authtoken, err := pkg.ReadToken()
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		err = pkg.DeleteRule(accesstoken, authtoken, args[0],*rmrulegroup)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
 	},
 }
 
@@ -36,4 +43,5 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// ruleCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	rmrulegroup = ruleCmd.Flags().StringP("rulegroup", "g", "kubernetes-alert", "specific the rulegroup name(required)")
 }

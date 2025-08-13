@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"fmt"
+	"rulepolicym/pkg"
 
 	"github.com/spf13/cobra"
 )
@@ -12,15 +13,21 @@ import (
 // copyCmd represents the copy command
 var copyCmd = &cobra.Command{
 	Use:   "copy",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "copy a rulegroup to a new rulegroup",
+	Long: `copy a rulegroup to a new rulegroup,include all rules under the rulegroup,you must
+	specify the source rulegroup and the destination rulegroup`,
+	Args: cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("copy called")
+		accesstoken, authtoken, err := pkg.ReadToken()
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		err = pkg.CopyRuleGroup(accesstoken, authtoken, args[0], args[1])
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 	},
 }
 

@@ -11,15 +11,32 @@ import (
 )
 
 const (
-	Token_File_Name = "rulepolicym_token.toml"
+	// Token_File_Name = "rulepolicym_token.toml"
 	Token_File_Path = "."
 )
 
 var now = time.Now()
 
+var tokenfile_name string
+
 func init() {
-	filename := strings.Split(Token_File_Name, ".")[0]
-	extension := strings.Split(Token_File_Name, ".")[1]
+
+	dceurl := os.Getenv(Dce_Url_Env_Name)
+	tokenfile_name = fmt.Sprintf("rulepolicym_token"+"_%s.toml", strings.TrimSuffix(strings.TrimPrefix(dceurl, "http://"), "/"))
+	// split the tokenfile_name by the last dot
+	lastIndex := strings.LastIndex(tokenfile_name, ".")
+	var filename, extension string
+	if lastIndex == -1 {
+		filename = tokenfile_name
+		extension = "toml"
+	} else {
+		filename = tokenfile_name[:lastIndex]
+		extension = tokenfile_name[lastIndex+1:]
+
+	}
+
+	//filename := strings.Split(tokenfile_name, ".")[0]
+	//extension := strings.Split(tokenfile_name, ".")[1]
 	viper.SetConfigName(filename)
 	viper.SetConfigType(extension)
 	viper.AddConfigPath(Token_File_Path)
@@ -41,7 +58,7 @@ func ReadToken() (string, string, error) {
 		}
 
 	}
-	tokenfileinfo, err := os.Stat(filepath.Join(Token_File_Path, Token_File_Name))
+	tokenfileinfo, err := os.Stat(filepath.Join(Token_File_Path, tokenfile_name))
 	if err != nil {
 		return "", "", err
 	}
@@ -78,7 +95,7 @@ func UpdateToken() error {
 }
 
 func CreateTokenFile() error {
-	file, err := os.Create(filepath.Join(Token_File_Path, Token_File_Name))
+	file, err := os.Create(filepath.Join(Token_File_Path, tokenfile_name))
 	if err != nil {
 		return err
 	}
