@@ -16,25 +16,24 @@ var rulesCmd = &cobra.Command{
 	Short: "list rules in a rulegroup",
 	Long:  `list rules in a specific rulegroup name, default is kubernetes-alert`,
 	Args:  cobra.NoArgs,
-	Run: func(cmd *cobra.Command, args []string) {
-		accesstoken, authtoken, err := pkg.ReadToken()
+	RunE: func(cmd *cobra.Command, args []string) error {
+		client := pkg.HttpClient()
+		accesstoken, authtoken, err := pkg.ReadToken(client)
 		if err != nil {
-			fmt.Println(err)
-			return
+			return err
 		}
-		rulegroupid, err := pkg.GetRuleGroupId(accesstoken, authtoken, *listrulegroup)
+		rulegroupid, err := pkg.GetRuleGroupId(client, accesstoken, authtoken, *listrulegroup)
 		if err != nil {
-			fmt.Println(err)
-			return
+			return err
 		}
-		rules, err := pkg.ListRules(accesstoken, authtoken, rulegroupid)
+		rules, err := pkg.ListRules(client, accesstoken, authtoken, rulegroupid)
 		if err != nil {
-			fmt.Println(err)
-			return
+			return err
 		}
 		for _, rule := range rules {
 			fmt.Println(rule.Name)
 		}
+		return nil
 	},
 }
 

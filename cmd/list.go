@@ -4,8 +4,6 @@ Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 )
 
@@ -14,9 +12,6 @@ var listCmd = &cobra.Command{
 	Use:   "list",
 	Short: "list rulegroups or rules in a rulegroup",
 	Long:  `list rulegroups,or list rules in a specific rulegroup`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("list called")
-	},
 }
 
 func init() {

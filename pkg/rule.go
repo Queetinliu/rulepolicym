@@ -1,7 +1,7 @@
 package pkg
 
 import (
-	"fmt"
+	"net/http"
 )
 
 type Rule struct {
@@ -49,7 +49,7 @@ type RuleGroupResp struct {
 	Update_At   int               `json:"update_at"`
 }
 
-func ListRules(accesstoken, authtoken, rulegroupid string) ([]Rule, error) {
+func ListRules(client *http.Client, accesstoken, authtoken, rulegroupid string) ([]Rule, error) {
 
 	urlpath, err := GetApiMonitorUrl("rule-groups", rulegroupid)
 
@@ -58,6 +58,7 @@ func ListRules(accesstoken, authtoken, rulegroupid string) ([]Rule, error) {
 		return nil, err
 	}
 	listrulesreq := Request{
+		Client:  client,
 		Method:  "GET",
 		Url:     urlpath,
 		Headers: apimonitorheader(accesstoken, authtoken),
@@ -69,17 +70,12 @@ func ListRules(accesstoken, authtoken, rulegroupid string) ([]Rule, error) {
 	return listrulesresp.Rules, nil
 }
 
-func GetRuleId(accesstoken, authtoken, rulename, rulegroupname string) (string, error) {
-
-	return "", fmt.Errorf("not found ruleid for rule %s in rulegroup %s", rulename, rulegroupname)
-}
-
-func DeleteRule(accesstoken, authtoken, rulename, rulegroupname string) error {
-	rulegroupid, err := GetRuleGroupId(accesstoken, authtoken, rulegroupname)
+func DeleteRule(client *http.Client, accesstoken, authtoken, rulename, rulegroupname string) error {
+	rulegroupid, err := GetRuleGroupId(client, accesstoken, authtoken, rulegroupname)
 	if err != nil {
 		return err
 	}
-	listrules, err := ListRules(accesstoken, authtoken, rulegroupid)
+	listrules, err := ListRules(client, accesstoken, authtoken, rulegroupid)
 	if err != nil {
 		return err
 	}
@@ -97,6 +93,7 @@ func DeleteRule(accesstoken, authtoken, rulename, rulegroupname string) error {
 	//urlpath, err := url.JoinPath(os.Getenv(Dce_Url_Env_Name), Api_Monitor_Path_Prefix, "rule-groups", rulegroupid, "rules", ruleid)
 
 	deleterulereq := Request{
+		Client: client,
 		Method:  "DELETE",
 		Url:     urlpath,
 		Headers: apimonitorheader(accesstoken, authtoken),

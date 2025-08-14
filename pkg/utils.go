@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"time"
 )
 
 const (
@@ -19,6 +20,13 @@ const (
 type SsoResp struct {
 	Access_Token string `json:"access_token"`
 }
+
+
+func HttpClient() *http.Client {
+    client := &http.Client{Timeout: 10 * time.Second}
+    return client
+}
+
 
 func apimonitorheader(accesstoken, authtoken string) map[string]string {
 	return map[string]string{
@@ -32,7 +40,7 @@ func GetApiMonitorUrl(pathelements ...string) (string, error) {
 	return url.JoinPath(os.Getenv(Dce_Url_Env_Name), newpathelements...)
 }
 
-func GetAccessToken() (SsoResp, error) {
+func GetAccessToken(client *http.Client) (SsoResp, error) {
 	// from the OS environment to get username and password
 	dceurl := os.Getenv(Dce_Url_Env_Name)
 	Sso_Url, err := url.JoinPath(dceurl, Sso_Path)
@@ -45,6 +53,7 @@ func GetAccessToken() (SsoResp, error) {
 	userpassbase64 := base64.StdEncoding.EncodeToString([]byte(userpass))
 
 	ssoreq := Request{
+		Client: client,
 		Method: "POST",
 		Url:    Sso_Url,
 		Headers: map[string]string{
@@ -76,13 +85,13 @@ type Account struct {
 	Status       string   `json:"status"`
 }
 
-func GetAuthToken(access_token string) (AuthResp, error) {
+func GetAuthToken(client *http.Client, access_token string) (AuthResp, error) {
 	urlpath, err := GetApiMonitorUrl("auth")
 	if err != nil {
 		return AuthResp{}, err
 	}
-	fmt.Println(urlpath)
 	getauth_req := Request{
+		Client: client,
 		Method: "POST",
 		Url:    urlpath,
 		Headers: map[string]string{
@@ -97,6 +106,7 @@ func GetAuthToken(access_token string) (AuthResp, error) {
 }
 
 type Request struct {
+	Client      *http.Client
 	Method      string
 	Url         string
 	Headers     map[string]string
@@ -111,7 +121,7 @@ type Response interface {
 func NewRequest[R Response](request Request) (R, error) {
 	// do a request
 	var respbody R
-	client := &http.Client{}
+	// client := &http.Client{}
 	req, err := http.NewRequest(request.Method, request.Url, request.Body)
 	if err != nil {
 		return respbody, fmt.Errorf("create new request to %s with err:%w", request.Url, err)
@@ -127,6 +137,10 @@ func NewRequest[R Response](request Request) (R, error) {
 	req.URL.RawQuery = q.Encode()
 
 	//fmt.Printf("%#v",req.Header)
+	client := request.Client
+	if client == nil {
+		client = http.DefaultClient
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		return respbody, fmt.Errorf("do request to %s ,body: %s with err:%w", request.Url, req.Body, err)
@@ -138,10 +152,10 @@ func NewRequest[R Response](request Request) (R, error) {
 	}
 	//fmt.Println(string(bodyText))
 	// if
-	if _,ok := any(respbody).(struct{});ok{
-return respbody,nil
+	if _, ok := any(respbody).(struct{}); ok {
+		return respbody, nil
 	}
-		
+
 	err = json.Unmarshal(bodyText, &respbody)
 	if err != nil {
 		return respbody, err

@@ -4,30 +4,30 @@ Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"fmt"
 	"rulepolicym/pkg"
 
 	"github.com/spf13/cobra"
 )
+
 var rmrulegroup *string
+
 // ruleCmd represents the rule command
 var ruleCmd = &cobra.Command{
 	Use:   "rule",
 	Short: "delete a rule from a rulegroup",
 	Long:  `delete a rule from the specified rulegroup`,
 	Args:  cobra.ExactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
-		accesstoken, authtoken, err := pkg.ReadToken()
+	RunE: func(cmd *cobra.Command, args []string) error {
+		client := pkg.HttpClient()
+		accesstoken, authtoken, err := pkg.ReadToken(client)
 		if err != nil {
-			fmt.Println(err)
-			return
+			return err
 		}
-		err = pkg.DeleteRule(accesstoken, authtoken, args[0],*rmrulegroup)
+		err = pkg.DeleteRule(client, accesstoken, authtoken, args[0], *rmrulegroup)
 		if err != nil {
-			fmt.Println(err)
-			return
+			return err
 		}
-
+		return nil
 	},
 }
 

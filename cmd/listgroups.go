@@ -16,20 +16,20 @@ var listgroupsCmd = &cobra.Command{
 	Short: "list all rulegroups",
 	Long:  `list all groups in the system`,
 	Args:  cobra.NoArgs,
-	Run: func(cmd *cobra.Command, args []string) {
-		accesstoken, authtoken, err := pkg.ReadToken()
+	RunE: func(cmd *cobra.Command, args []string) error {
+		client := pkg.HttpClient()
+		accesstoken, authtoken, err := pkg.ReadToken(client)
 		if err != nil {
-			fmt.Println(err)
-			return
+			return err
 		}
-		rulegroupresp, err := pkg.ListRuleGroups(accesstoken, authtoken)
+		rulegroupresp, err := pkg.ListRuleGroups(client, accesstoken, authtoken)
 		if err != nil {
-			fmt.Println(err)
-			return
+			return err
 		}
 		for _, rulegroup := range rulegroupresp.Data {
 			fmt.Println(rulegroup.Name)
 		}
+		return nil
 	},
 }
 

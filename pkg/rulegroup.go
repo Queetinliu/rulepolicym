@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"net/http"
 )
 
 const (
@@ -11,13 +12,14 @@ const (
 // ApiMonitor_Path_Prefix = "dce/proxy/clusters/17263D42-22D8-45B1-45BB-D9451377FB56/plugin/29002/api/monitor/"
 )
 
-func ListRuleGroups(accesstoken, authtoken string) (RuleGroupsResp, error) {
+func ListRuleGroups(client *http.Client, accesstoken, authtoken string) (RuleGroupsResp, error) {
 	urlpath, err := GetApiMonitorUrl("rule-groups")
 	if err != nil {
 		return RuleGroupsResp{}, err
 	}
 
 	listrulegroup_req := Request{
+		Client: client,
 		Method:  "GET",
 		Url:     urlpath,
 		Headers: apimonitorheader(accesstoken, authtoken),
@@ -64,8 +66,8 @@ type RuleGroupsData struct {
 	Update_At   int               `json:"update_at"`
 }
 
-func GetRuleGroupId(accesstoken, authtoken, name string) (string, error) {
-	rulegroupresp, err := ListRuleGroups(accesstoken, authtoken)
+func GetRuleGroupId(client *http.Client, accesstoken, authtoken, name string) (string, error) {
+	rulegroupresp, err := ListRuleGroups(client, accesstoken, authtoken)
 	if err != nil {
 		return "", err
 	}
@@ -77,8 +79,8 @@ func GetRuleGroupId(accesstoken, authtoken, name string) (string, error) {
 	return "", fmt.Errorf("not found rulegroup name:%s", name)
 }
 
-func CopyRuleGroup(accesstoken, authtoken, source, dest string) error {
-	listrulegroups, err := ListRuleGroups(accesstoken, authtoken)
+func CopyRuleGroup(client *http.Client, accesstoken, authtoken, source, dest string) error {
+	listrulegroups, err := ListRuleGroups(client, accesstoken, authtoken)
 	if err != nil {
 		return err
 	}
@@ -122,6 +124,7 @@ func CopyRuleGroup(accesstoken, authtoken, source, dest string) error {
 	}
 
 	createrulegroupreq := Request{
+		Client: client,
 		Method:  "POST",
 		Url:     urlpath,
 		Headers: apimonitorheader(accesstoken, authtoken),
@@ -138,8 +141,8 @@ func CopyRuleGroup(accesstoken, authtoken, source, dest string) error {
 // type DeleteRuleGroupResp struct {
 // }
 
-func DeleteRuleGroup(accesstoken, authtoken, rulegroupname string) error {
-	rulegroupid, err := GetRuleGroupId(accesstoken, authtoken, rulegroupname)
+func DeleteRuleGroup(client *http.Client, accesstoken, authtoken, rulegroupname string) error {
+	rulegroupid, err := GetRuleGroupId(client, accesstoken, authtoken, rulegroupname)
 	if err != nil {
 		return err
 	}
@@ -150,6 +153,7 @@ func DeleteRuleGroup(accesstoken, authtoken, rulegroupname string) error {
 	}
 
 	deleterulegroupreq := Request{
+		Client: client,
 		Method:  "DELETE",
 		Url:     urlpath,
 		Headers: apimonitorheader(accesstoken, authtoken),

@@ -4,7 +4,6 @@ Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"fmt"
 	"rulepolicym/pkg"
 
 	"github.com/spf13/cobra"
@@ -16,17 +15,17 @@ var rulegroupCmd = &cobra.Command{
 	Short: "delete a rulegroup",
 	Long:  `delete the specified rulegroup`,
 	Args:  cobra.ExactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
-		accesstoken, authtoken, err := pkg.ReadToken()
+	RunE: func(cmd *cobra.Command, args []string) error {
+		client := pkg.HttpClient()
+		accesstoken, authtoken, err := pkg.ReadToken(client)
 		if err != nil {
-			fmt.Println(err)
-			return
+			return err
 		}
-		err = pkg.DeleteRuleGroup(accesstoken, authtoken, args[0])
+		err = pkg.DeleteRuleGroup(client, accesstoken, authtoken, args[0])
 		if err != nil {
-			fmt.Println(err)
-			return
+			return err
 		}
+		return nil
 	},
 }
 

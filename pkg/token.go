@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -42,14 +43,14 @@ func init() {
 	viper.AddConfigPath(Token_File_Path)
 }
 
-func ReadToken() (string, string, error) {
+func ReadToken(client *http.Client) (string, string, error) {
 	// use viper to read token from file
 
 	err := viper.ReadInConfig()
 	if err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 			// Config file not found; write the token file
-			err = CreateTokenFile()
+			err = CreateTokenFile(client)
 			if err != nil {
 				return "", "", err
 			}
@@ -64,7 +65,7 @@ func ReadToken() (string, string, error) {
 	}
 	// if the tokenfile's modification is 14 minutes ago, write new token file
 	if now.Sub(tokenfileinfo.ModTime()) > 14*time.Minute {
-		err = UpdateToken()
+		err = UpdateToken(client)
 		if err != nil {
 			return "", "", err
 		}
@@ -79,12 +80,12 @@ func ReadToken() (string, string, error) {
 
 }
 
-func UpdateToken() error {
-	accesstokenresp, err := GetAccessToken()
+func UpdateToken(client *http.Client) error {
+	accesstokenresp, err := GetAccessToken(client)
 	if err != nil {
 		return err
 	}
-	authtokenresp, err := GetAuthToken(accesstokenresp.Access_Token)
+	authtokenresp, err := GetAuthToken(client, accesstokenresp.Access_Token)
 	if err != nil {
 		return err
 	}
@@ -94,11 +95,11 @@ func UpdateToken() error {
 	return viper.WriteConfig()
 }
 
-func CreateTokenFile() error {
+func CreateTokenFile(client *http.Client) error {
 	file, err := os.Create(filepath.Join(Token_File_Path, tokenfile_name))
 	if err != nil {
 		return err
 	}
 	defer file.Close()
-	return UpdateToken()
+	return UpdateToken(client)
 }

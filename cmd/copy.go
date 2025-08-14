@@ -4,7 +4,6 @@ Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"fmt"
 	"rulepolicym/pkg"
 
 	"github.com/spf13/cobra"
@@ -17,17 +16,17 @@ var copyCmd = &cobra.Command{
 	Long: `copy a rulegroup to a new rulegroup,include all rules under the rulegroup,you must
 	specify the source rulegroup and the destination rulegroup`,
 	Args: cobra.ExactArgs(2),
-	Run: func(cmd *cobra.Command, args []string) {
-		accesstoken, authtoken, err := pkg.ReadToken()
+	RunE: func(cmd *cobra.Command, args []string) error {
+		client := pkg.HttpClient()
+		accesstoken, authtoken, err := pkg.ReadToken(client)
 		if err != nil {
-			fmt.Println(err)
-			return
+			return err
 		}
-		err = pkg.CopyRuleGroup(accesstoken, authtoken, args[0], args[1])
+		err = pkg.CopyRuleGroup(client, accesstoken, authtoken, args[0], args[1])
 		if err != nil {
-			fmt.Println(err)
-			return
+			return err
 		}
+		return nil
 	},
 }
 
