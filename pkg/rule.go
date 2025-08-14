@@ -27,27 +27,7 @@ type Rule struct {
 	Updated_At  int               `json:"updated_at"`
 }
 
-type RuleGroupResp struct {
-	Active_At   int               `json:"active_at"`
-	Annotation  map[string]string `json:"annotation"`
-	Built_in    bool              `json:"built_in"`
-	Create_At   int               `json:"create_at"`
-	Create_By   string            `json:"create_by"`
-	Id          string            `json:"id"`
-	Interval    string            `json:"interval"`
-	Keywords    string            `json:"keywords"`
-	Labels      map[string]string `json:"labels"`
-	Name        string            `json:"name"`
-	Notifiers   []string          `json:"notifiers"`
-	Notify_Type string            `json:"notify_type"`
-	Ns          string            `json:"ns"`
-	Operated_By string            `json:"operated_by"`
-	Paused      bool              `json:"paused"`
-	Rules       []Rule            `json:"rules"`
-	Target      string            `json:"target"`
-	Type        string            `json:"type"`
-	Update_At   int               `json:"update_at"`
-}
+
 
 func ListRules(client *http.Client, accesstoken, authtoken, rulegroupid string) ([]Rule, error) {
 
@@ -63,7 +43,7 @@ func ListRules(client *http.Client, accesstoken, authtoken, rulegroupid string) 
 		Url:     urlpath,
 		Headers: apimonitorheader(accesstoken, authtoken),
 	}
-	listrulesresp, err := NewRequest[RuleGroupResp](listrulesreq)
+	listrulesresp, err := NewRequest[RuleGroup](listrulesreq)
 	if err != nil {
 		return nil, err
 	}

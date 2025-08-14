@@ -12,10 +12,10 @@ const (
 // ApiMonitor_Path_Prefix = "dce/proxy/clusters/17263D42-22D8-45B1-45BB-D9451377FB56/plugin/29002/api/monitor/"
 )
 
-func ListRuleGroups(client *http.Client, accesstoken, authtoken string) (RuleGroupsResp, error) {
+func ListRuleGroups(client *http.Client, accesstoken, authtoken string) (RuleGroups, error) {
 	urlpath, err := GetApiMonitorUrl("rule-groups")
 	if err != nil {
-		return RuleGroupsResp{}, err
+		return RuleGroups{}, err
 	}
 
 	listrulegroup_req := Request{
@@ -29,22 +29,22 @@ func ListRuleGroups(client *http.Client, accesstoken, authtoken string) (RuleGro
 			"ns":   "SYSTEM",
 		},
 	}
-	respbody, err := NewRequest[RuleGroupsResp](listrulegroup_req)
+	respbody, err := NewRequest[RuleGroups](listrulegroup_req)
 	if err != nil {
-		return RuleGroupsResp{}, err
+		return RuleGroups{}, err
 	}
 	return respbody, nil
 }
 
-type RuleGroupsResp struct {
-	Data    []RuleGroupsData `json:"data"`
+type RuleGroups struct {
+	Data    []RuleGroup `json:"data"`
 	Keyword string           `json:"keyword"`
 	Page    int              `json:"page"`
 	Size    int              `json:"size"`
 	Total   int              `json:"total"`
 }
 
-type RuleGroupsData struct {
+type RuleGroup struct {
 	Active_At   int               `json:"active_at"`
 	Annotation  map[string]string `json:"annotation"`
 	Built_in    bool              `json:"built_in"`
@@ -66,6 +66,7 @@ type RuleGroupsData struct {
 	Update_At   int               `json:"update_at"`
 }
 
+
 func GetRuleGroupId(client *http.Client, accesstoken, authtoken, name string) (string, error) {
 	rulegroupresp, err := ListRuleGroups(client, accesstoken, authtoken)
 	if err != nil {
@@ -84,7 +85,7 @@ func CopyRuleGroup(client *http.Client, accesstoken, authtoken, source, dest str
 	if err != nil {
 		return err
 	}
-	var sourcerulegroup, destrulegroup RuleGroupsData
+	var sourcerulegroup, destrulegroup RuleGroup
 	for _, rulegroup := range listrulegroups.Data {
 		if rulegroup.Name == source {
 			sourcerulegroup = rulegroup
@@ -130,7 +131,7 @@ func CopyRuleGroup(client *http.Client, accesstoken, authtoken, source, dest str
 		Headers: apimonitorheader(accesstoken, authtoken),
 		Body:    bytes.NewBuffer(destgroupdata),
 	}
-	_, err = NewRequest[RuleGroupResp](createrulegroupreq)
+	_, err = NewRequest[RuleGroup](createrulegroupreq)
 	if err != nil {
 		return fmt.Errorf("create new rulegroup with err:%w", err)
 	}

@@ -17,6 +17,10 @@ const (
 	Dce_Url_Env_Name = "DCE_URL"
 )
 
+type Printer interface {
+	print()
+}
+
 type SsoResp struct {
 	Access_Token string `json:"access_token"`
 }
@@ -115,7 +119,7 @@ type Request struct {
 }
 
 type Response interface {
-	SsoResp | AuthResp | RuleGroupsResp | RuleGroupResp | struct{}
+	SsoResp | AuthResp | RuleGroups | RuleGroup | struct{}
 }
 
 func NewRequest[R Response](request Request) (R, error) {
