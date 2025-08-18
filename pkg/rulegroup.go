@@ -5,11 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-)
-
-const (
-// Api_Monitor_Url = "http://30.1.64.241/dce/proxy/clusters/17263D42-22D8-45B1-45BB-D9451377FB56/plugin/29002/api/monitor/"
-// ApiMonitor_Path_Prefix = "dce/proxy/clusters/17263D42-22D8-45B1-45BB-D9451377FB56/plugin/29002/api/monitor/"
+	"os"
+	"strconv"
+	"text/tabwriter"
 )
 
 func ListRuleGroups(client *http.Client, accesstoken, authtoken string) (RuleGroups, error) {
@@ -19,7 +17,7 @@ func ListRuleGroups(client *http.Client, accesstoken, authtoken string) (RuleGro
 	}
 
 	listrulegroup_req := Request{
-		Client: client,
+		Client:  client,
 		Method:  "GET",
 		Url:     urlpath,
 		Headers: apimonitorheader(accesstoken, authtoken),
@@ -38,10 +36,10 @@ func ListRuleGroups(client *http.Client, accesstoken, authtoken string) (RuleGro
 
 type RuleGroups struct {
 	Data    []RuleGroup `json:"data"`
-	Keyword string           `json:"keyword"`
-	Page    int              `json:"page"`
-	Size    int              `json:"size"`
-	Total   int              `json:"total"`
+	Keyword string      `json:"keyword"`
+	Page    int         `json:"page"`
+	Size    int         `json:"size"`
+	Total   int         `json:"total"`
 }
 
 type RuleGroup struct {
@@ -66,6 +64,17 @@ type RuleGroup struct {
 	Update_At   int               `json:"update_at"`
 }
 
+func (rgs RuleGroups) Print() {
+	w := tabwriter.NewWriter(os.Stdout, 8, 8, 0, '\t', 0)
+	// Write some data to the Writer.
+	fmt.Fprintf(w, "\n %s\t%s\t", "策略", "告警规则数")
+	for _, rulegroup := range rgs.Data {
+		fmt.Fprintf(w, "\n %s\t%s\t", rulegroup.Name, strconv.Itoa(len(rulegroup.Rules)))
+	}
+	fmt.Fprintf(w, "\n")
+	// Flush the Writer to ensure all data is written to the output.
+	w.Flush()
+}
 
 func GetRuleGroupId(client *http.Client, accesstoken, authtoken, name string) (string, error) {
 	rulegroupresp, err := ListRuleGroups(client, accesstoken, authtoken)
@@ -125,7 +134,7 @@ func CopyRuleGroup(client *http.Client, accesstoken, authtoken, source, dest str
 	}
 
 	createrulegroupreq := Request{
-		Client: client,
+		Client:  client,
 		Method:  "POST",
 		Url:     urlpath,
 		Headers: apimonitorheader(accesstoken, authtoken),
@@ -154,7 +163,7 @@ func DeleteRuleGroup(client *http.Client, accesstoken, authtoken, rulegroupname 
 	}
 
 	deleterulegroupreq := Request{
-		Client: client,
+		Client:  client,
 		Method:  "DELETE",
 		Url:     urlpath,
 		Headers: apimonitorheader(accesstoken, authtoken),

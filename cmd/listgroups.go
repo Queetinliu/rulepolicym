@@ -4,8 +4,6 @@ Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 	"rulepolicym/pkg"
 )
@@ -26,9 +24,8 @@ var listgroupsCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		for _, rulegroup := range rulegroupresp.Data {
-			fmt.Println(rulegroup.Name)
-		}
+		var p pkg.Printer = rulegroupresp
+		p.Print()
 		return nil
 	},
 }

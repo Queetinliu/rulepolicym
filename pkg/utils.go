@@ -18,19 +18,17 @@ const (
 )
 
 type Printer interface {
-	print()
+	Print()
 }
 
 type SsoResp struct {
 	Access_Token string `json:"access_token"`
 }
 
-
 func HttpClient() *http.Client {
-    client := &http.Client{Timeout: 10 * time.Second}
-    return client
+	client := &http.Client{Timeout: 10 * time.Second}
+	return client
 }
-
 
 func apimonitorheader(accesstoken, authtoken string) map[string]string {
 	return map[string]string{

@@ -1,7 +1,10 @@
 package pkg
 
 import (
+	"fmt"
 	"net/http"
+	"os"
+	"text/tabwriter"
 )
 
 type Rule struct {
@@ -27,15 +30,13 @@ type Rule struct {
 	Updated_At  int               `json:"updated_at"`
 }
 
-
-
-func ListRules(client *http.Client, accesstoken, authtoken, rulegroupid string) ([]Rule, error) {
+func ListRules(client *http.Client, accesstoken, authtoken, rulegroupid string) (RuleGroup, error) {
 
 	urlpath, err := GetApiMonitorUrl("rule-groups", rulegroupid)
 
 	//urlpath, err := url.JoinPath(os.Getenv(Dce_Url_Env_Name), Api_Monitor_Path_Prefix, "rule-groups", rulegroupid)
 	if err != nil {
-		return nil, err
+		return RuleGroup{}, err
 	}
 	listrulesreq := Request{
 		Client:  client,
@@ -45,9 +46,21 @@ func ListRules(client *http.Client, accesstoken, authtoken, rulegroupid string) 
 	}
 	listrulesresp, err := NewRequest[RuleGroup](listrulesreq)
 	if err != nil {
-		return nil, err
+		return RuleGroup{}, err
 	}
-	return listrulesresp.Rules, nil
+	return listrulesresp, nil
+}
+
+func (rg RuleGroup) Print() {
+	w := tabwriter.NewWriter(os.Stdout, 16, 8, 0, '\t', 0)
+	// Write some data to the Writer.
+	fmt.Fprintf(w, "\n %s\t%s\t%s\t%s\t","规则","状态","告警周期","告警级别")
+	for _, rule := range rg.Rules {
+		fmt.Fprintf(w, "\n %s\t%s\t%s\t%s\t",rule.Name,rule.State,rule.For,rule.Severity)
+	}
+	fmt.Fprintf(w, "\n")
+	// Flush the Writer to ensure all data is written to the output.
+	w.Flush()
 }
 
 func DeleteRule(client *http.Client, accesstoken, authtoken, rulename, rulegroupname string) error {
@@ -55,13 +68,13 @@ func DeleteRule(client *http.Client, accesstoken, authtoken, rulename, rulegroup
 	if err != nil {
 		return err
 	}
-	listrules, err := ListRules(client, accesstoken, authtoken, rulegroupid)
+	rulegroup, err := ListRules(client, accesstoken, authtoken, rulegroupid)
 	if err != nil {
 		return err
 	}
 
 	var ruleid string
-	for _, rule := range listrules {
+	for _, rule := range rulegroup.Rules {
 		if rule.Name == rulename {
 			ruleid = rule.Id
 		}
@@ -73,7 +86,7 @@ func DeleteRule(client *http.Client, accesstoken, authtoken, rulename, rulegroup
 	//urlpath, err := url.JoinPath(os.Getenv(Dce_Url_Env_Name), Api_Monitor_Path_Prefix, "rule-groups", rulegroupid, "rules", ruleid)
 
 	deleterulereq := Request{
-		Client: client,
+		Client:  client,
 		Method:  "DELETE",
 		Url:     urlpath,
 		Headers: apimonitorheader(accesstoken, authtoken),
