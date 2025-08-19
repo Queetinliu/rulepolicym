@@ -26,7 +26,7 @@ type SsoResp struct {
 }
 
 func HttpClient() *http.Client {
-	client := &http.Client{Timeout: 10 * time.Second}
+	client := &http.Client{Timeout: 30 * time.Second}
 	return client
 }
 

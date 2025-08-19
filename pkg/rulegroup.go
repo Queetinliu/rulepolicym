@@ -148,9 +148,6 @@ func CopyRuleGroup(client *http.Client, accesstoken, authtoken, source, dest str
 
 }
 
-// type DeleteRuleGroupResp struct {
-// }
-
 func DeleteRuleGroup(client *http.Client, accesstoken, authtoken, rulegroupname string) error {
 	rulegroupid, err := GetRuleGroupId(client, accesstoken, authtoken, rulegroupname)
 	if err != nil {
@@ -173,5 +170,47 @@ func DeleteRuleGroup(client *http.Client, accesstoken, authtoken, rulegroupname 
 		return err
 	}
 	return nil
+
+}
+
+func RemoveDuplicateRule(client *http.Client, accesstoken, authtoken, sourcerulegroupname, baserulegroupname string) error {
+	sourcerulegroupid, err := GetRuleGroupId(client, accesstoken, authtoken, sourcerulegroupname)
+	if err != nil {
+		return err
+	}
+	baserulegroupid, err := GetRuleGroupId(client, accesstoken, authtoken, baserulegroupname)
+	if err != nil {
+		return err
+	}
+	baserulemap := make(map[string]string)
+	baserulegroup, err := ListRules(client, accesstoken, authtoken, baserulegroupid)
+	if err != nil {
+		return err
+	}
+	for _, rule := range baserulegroup.Rules {
+		baserulemap[rule.Name] = rule.Expr
+	}
+	sourcerulegroup, err := ListRules(client, accesstoken, authtoken, sourcerulegroupid)
+	if err != nil {
+		return err
+	}
+	for _, rule := range sourcerulegroup.Rules {
+		_, ok := baserulemap[rule.Name]
+		if ok {
+			if baserulemap[rule.Name] != rule.Expr {
+				fmt.Printf("rule %s expr is not same in %s and %s,please delete it manually\n", rule.Name, baserulegroupname, sourcerulegroupname)
+			} else {
+				err = DeleteRule(client, accesstoken, authtoken, rule.Name,sourcerulegroupname)
+				if err != nil {
+					return err
+				}
+
+			}
+		} else {
+			fmt.Printf("rule %s is not in %s\n", rule.Name, baserulegroupname)
+		}
+	}
+	return nil
+
 
 }
