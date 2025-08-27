@@ -4,10 +4,18 @@ Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"net/http"
 	"os"
+	"rulepolicym/pkg"
 
 	"github.com/spf13/cobra"
 )
+
+var client *http.Client
+
+func init() {
+	client = pkg.HttpClient()
+}
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{

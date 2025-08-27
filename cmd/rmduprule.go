@@ -19,7 +19,7 @@ var rmduplicateruleCmd = &cobra.Command{
 	Long:  `remove the duplicate rule from the specified rulegroup by compare the rule expr and name in the based rulegroup`,
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client := pkg.HttpClient()
+		// client := pkg.HttpClient()
 		accesstoken, authtoken, err := pkg.ReadToken(client)
 		if err != nil {
 			return err

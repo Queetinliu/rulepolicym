@@ -17,7 +17,7 @@ var copyCmd = &cobra.Command{
 	specify the source rulegroup and the destination rulegroup`,
 	Args: cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client := pkg.HttpClient()
+		//client := pkg.HttpClient()
 		accesstoken, authtoken, err := pkg.ReadToken(client)
 		if err != nil {
 			return err

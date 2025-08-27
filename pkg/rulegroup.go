@@ -21,7 +21,7 @@ func ListRuleGroups(client *http.Client, accesstoken, authtoken string) (RuleGro
 		Method:  "GET",
 		Url:     urlpath,
 		Headers: apimonitorheader(accesstoken, authtoken),
-		QueryParams: map[string]string{
+		QueryParams: map[string]interface{}{
 			"page": "1",
 			"size": "50",
 			"ns":   "SYSTEM",
@@ -106,6 +106,10 @@ func CopyRuleGroup(client *http.Client, accesstoken, authtoken, source, dest str
 	if destrulegroup.Notify_Type == "" {
 		destrulegroup.Notify_Type = "script"
 	}
+	if destrulegroup.Target == "cluster"{
+		destrulegroup.Target = "{\"cluster\":\"cluster\"}"
+	}
+
 	for i, rules := range destrulegroup.Rules {
 		if rules.Severity != "critical" {
 			destrulegroup.Rules[i].Severity = "critical"
@@ -200,7 +204,7 @@ func RemoveDuplicateRule(client *http.Client, accesstoken, authtoken, sourcerule
 			if baserulemap[rule.Name] != rule.Expr {
 				fmt.Printf("rule %s expr is not same in %s and %s,please delete it manually\n", rule.Name, baserulegroupname, sourcerulegroupname)
 			} else {
-				err = DeleteRule(client, accesstoken, authtoken, rule.Name,sourcerulegroupname)
+				err = DeleteRule(client, accesstoken, authtoken, rule.Name, sourcerulegroupname)
 				if err != nil {
 					return err
 				}
@@ -212,5 +216,29 @@ func RemoveDuplicateRule(client *http.Client, accesstoken, authtoken, sourcerule
 	}
 	return nil
 
+}
 
+var pausemap = map[bool]string{
+	true:  "disabled",
+	false: "enabled",
+}
+
+func ControlRuleGroup(client *http.Client, accesstoken, authtoken, rulegroupname string, paused bool) error {
+	rulegroupid, err := GetRuleGroupId(client, accesstoken, authtoken, rulegroupname)
+	if err != nil {
+		return err
+	}
+	rulegroup, err := ListRules(client, accesstoken, authtoken, rulegroupid)
+	if err != nil {
+		return err
+	}
+	for _, rule := range rulegroup.Rules {
+		if rule.State != pausemap[paused] {
+			err = ControlRule(client, accesstoken, authtoken, rule.Id, rulegroupid, paused)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }

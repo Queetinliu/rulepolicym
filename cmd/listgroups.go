@@ -15,7 +15,7 @@ var listgroupsCmd = &cobra.Command{
 	Long:  `list all groups in the system`,
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client := pkg.HttpClient()
+		//client := pkg.HttpClient()
 		accesstoken, authtoken, err := pkg.ReadToken(client)
 		if err != nil {
 			return err

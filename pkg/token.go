@@ -1,8 +1,10 @@
 package pkg
 
 import (
+	"encoding/base64"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -102,4 +104,74 @@ func CreateTokenFile(client *http.Client) error {
 	}
 	defer file.Close()
 	return UpdateToken(client)
+}
+
+func GetAccessToken(client *http.Client) (SsoResp, error) {
+	// from the OS environment to get username and password
+	dceurl := os.Getenv(Dce_Url_Env_Name)
+	Sso_Url, err := url.JoinPath(dceurl, Sso_Path)
+	if err != nil {
+		return SsoResp{}, fmt.Errorf("url join path %s %s with err:%w", dceurl, Sso_Path, err)
+	}
+	username := os.Getenv("DCE_USERNAME")
+	password := os.Getenv("DCE_PASSWORD")
+	userpass := username + ":" + password
+	userpassbase64 := base64.StdEncoding.EncodeToString([]byte(userpass))
+
+	ssoreq := Request{
+		Client: client,
+		Method: "POST",
+		Url:    Sso_Url,
+		Headers: map[string]string{
+			"Authorization": fmt.Sprintf("Basic %s", userpassbase64),
+		},
+	}
+	respbody, err := NewRequest[SsoResp](ssoreq)
+	if err != nil {
+		return SsoResp{}, err
+	}
+	return respbody, nil
+}
+
+type SsoResp struct {
+	Access_Token string `json:"access_token"`
+}
+
+
+type AuthResp struct {
+	Token   string  `json:"token"`
+	Account Account `json:"account"`
+}
+
+type Account struct {
+	Emails       []string `json:"emails"`
+	ID           string   `json:"id"`
+	Is_Admin     bool     `json:"is_admin"`
+	Language     string   `json:"language"`
+	Name         string   `json:"name"`
+	Namespaces   []string `json:"namespaces"`
+	NickName     string   `json:"nick_name"`
+	Phone        string   `json:"phone"`
+	Primary_Mail string   `json:"primary_mail"`
+	Status       string   `json:"status"`
+}
+
+func GetAuthToken(client *http.Client, access_token string) (AuthResp, error) {
+	urlpath, err := GetApiMonitorUrl("auth")
+	if err != nil {
+		return AuthResp{}, err
+	}
+	getauth_req := Request{
+		Client: client,
+		Method: "POST",
+		Url:    urlpath,
+		Headers: map[string]string{
+			"X-DCE-ACCESS-TOKEN": access_token,
+		},
+	}
+	respbody, err := NewRequest[AuthResp](getauth_req)
+	if err != nil {
+		return AuthResp{}, err
+	}
+	return respbody, nil
 }

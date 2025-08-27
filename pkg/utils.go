@@ -1,7 +1,7 @@
 package pkg
 
 import (
-	"encoding/base64"
+	
 	"encoding/json"
 	"fmt"
 	"io"
@@ -12,7 +12,6 @@ import (
 )
 
 const (
-	// Sso_Url = "http://30.1.64.241/dce/sso/login"
 	Sso_Path         = "/dce/sso/login"
 	Dce_Url_Env_Name = "DCE_URL"
 )
@@ -21,9 +20,6 @@ type Printer interface {
 	Print()
 }
 
-type SsoResp struct {
-	Access_Token string `json:"access_token"`
-}
 
 func HttpClient() *http.Client {
 	client := &http.Client{Timeout: 30 * time.Second}
@@ -42,77 +38,12 @@ func GetApiMonitorUrl(pathelements ...string) (string, error) {
 	return url.JoinPath(os.Getenv(Dce_Url_Env_Name), newpathelements...)
 }
 
-func GetAccessToken(client *http.Client) (SsoResp, error) {
-	// from the OS environment to get username and password
-	dceurl := os.Getenv(Dce_Url_Env_Name)
-	Sso_Url, err := url.JoinPath(dceurl, Sso_Path)
-	if err != nil {
-		return SsoResp{}, fmt.Errorf("url join path %s %s with err:%w", dceurl, Sso_Path, err)
-	}
-	username := os.Getenv("DCE_USERNAME")
-	password := os.Getenv("DCE_PASSWORD")
-	userpass := username + ":" + password
-	userpassbase64 := base64.StdEncoding.EncodeToString([]byte(userpass))
-
-	ssoreq := Request{
-		Client: client,
-		Method: "POST",
-		Url:    Sso_Url,
-		Headers: map[string]string{
-			"Authorization": fmt.Sprintf("Basic %s", userpassbase64),
-		},
-	}
-	respbody, err := NewRequest[SsoResp](ssoreq)
-	if err != nil {
-		return SsoResp{}, err
-	}
-	return respbody, nil
-}
-
-type AuthResp struct {
-	Token   string  `json:"token"`
-	Account Account `json:"account"`
-}
-
-type Account struct {
-	Emails       []string `json:"emails"`
-	ID           string   `json:"id"`
-	Is_Admin     bool     `json:"is_admin"`
-	Language     string   `json:"language"`
-	Name         string   `json:"name"`
-	Namespaces   []string `json:"namespaces"`
-	NickName     string   `json:"nick_name"`
-	Phone        string   `json:"phone"`
-	Primary_Mail string   `json:"primary_mail"`
-	Status       string   `json:"status"`
-}
-
-func GetAuthToken(client *http.Client, access_token string) (AuthResp, error) {
-	urlpath, err := GetApiMonitorUrl("auth")
-	if err != nil {
-		return AuthResp{}, err
-	}
-	getauth_req := Request{
-		Client: client,
-		Method: "POST",
-		Url:    urlpath,
-		Headers: map[string]string{
-			"X-DCE-ACCESS-TOKEN": access_token,
-		},
-	}
-	respbody, err := NewRequest[AuthResp](getauth_req)
-	if err != nil {
-		return AuthResp{}, err
-	}
-	return respbody, nil
-}
-
 type Request struct {
 	Client      *http.Client
 	Method      string
 	Url         string
 	Headers     map[string]string
-	QueryParams map[string]string
+	QueryParams map[string]interface{}
 	Body        io.Reader
 }
 
@@ -124,6 +55,7 @@ func NewRequest[R Response](request Request) (R, error) {
 	// do a request
 	var respbody R
 	// client := &http.Client{}
+	
 	req, err := http.NewRequest(request.Method, request.Url, request.Body)
 	if err != nil {
 		return respbody, fmt.Errorf("create new request to %s with err:%w", request.Url, err)
@@ -134,7 +66,18 @@ func NewRequest[R Response](request Request) (R, error) {
 	}
 	q := req.URL.Query()
 	for k, v := range request.QueryParams {
-		q.Add(k, v)
+		switch v := v.(type) {
+		case int:
+			q.Add(k, fmt.Sprintf("%d", v))
+		case int64:
+			q.Add(k, fmt.Sprintf("%d", v))
+		case bool:
+			q.Add(k, fmt.Sprintf("%v", v))
+		case string:
+			q.Add(k, v)
+		default:
+			q.Add(k, fmt.Sprintf("%v", v))
+		}
 	}
 	req.URL.RawQuery = q.Encode()
 
@@ -152,8 +95,7 @@ func NewRequest[R Response](request Request) (R, error) {
 	if err != nil {
 		return respbody, err
 	}
-	//fmt.Println(string(bodyText))
-	// if
+	// fmt.Println(string(bodyText))
 	if _, ok := any(respbody).(struct{}); ok {
 		return respbody, nil
 	}

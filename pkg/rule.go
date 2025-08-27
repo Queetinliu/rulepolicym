@@ -1,6 +1,8 @@
 package pkg
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -54,9 +56,9 @@ func ListRules(client *http.Client, accesstoken, authtoken, rulegroupid string) 
 func (rg RuleGroup) Print() {
 	w := tabwriter.NewWriter(os.Stdout, 16, 8, 0, '\t', 0)
 	// Write some data to the Writer.
-	fmt.Fprintf(w, "\n %s\t%s\t%s\t%s\t","规则","状态","告警周期","告警级别")
+	fmt.Fprintf(w, "\n %s\t%s\t%s\t%s\t", "规则", "状态", "告警周期", "告警级别")
 	for _, rule := range rg.Rules {
-		fmt.Fprintf(w, "\n %s\t%s\t%s\t%s\t",rule.Name,rule.State,rule.For,rule.Severity)
+		fmt.Fprintf(w, "\n %s\t%s\t%s\t%s\t", rule.Name, rule.State, rule.For, rule.Severity)
 	}
 	fmt.Fprintf(w, "\n")
 	// Flush the Writer to ensure all data is written to the output.
@@ -97,4 +99,31 @@ func DeleteRule(client *http.Client, accesstoken, authtoken, rulename, rulegroup
 	}
 	return nil
 
+}
+
+type PausePayload struct {
+	Paused bool `json:"paused"`
+}
+
+func ControlRule(client *http.Client, accesstoken, authtoken, ruleid, rulegroupid string, paused bool) error {
+	urlpath, err := GetApiMonitorUrl("rule-groups", rulegroupid, "rules", ruleid, "pause")
+	if err != nil {
+		return err
+	}
+	requestbody, err := json.Marshal(PausePayload{Paused: paused})
+	if err != nil {
+		return err
+	}
+	pauserulereq := Request{
+		Client:  client,
+		Method:  "PUT",
+		Url:     urlpath,
+		Headers: apimonitorheader(accesstoken, authtoken),
+		Body:    bytes.NewBuffer(requestbody),
+	}
+	_, err = NewRequest[struct{}](pauserulereq)
+	if err != nil {
+		return err
+	}
+	return nil
 }

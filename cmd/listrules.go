@@ -15,7 +15,7 @@ var rulesCmd = &cobra.Command{
 	Long:  `list rules in a specific rulegroup name, default is kubernetes-alert`,
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client := pkg.HttpClient()
+		//client := pkg.HttpClient()
 		accesstoken, authtoken, err := pkg.ReadToken(client)
 		if err != nil {
 			return err

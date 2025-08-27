@@ -18,7 +18,7 @@ var ruleCmd = &cobra.Command{
 	Long:  `delete a rule from the specified rulegroup`,
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client := pkg.HttpClient()
+		// client := pkg.HttpClient()
 		accesstoken, authtoken, err := pkg.ReadToken(client)
 		if err != nil {
 			return err
