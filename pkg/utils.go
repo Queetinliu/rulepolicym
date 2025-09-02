@@ -55,6 +55,13 @@ func NewRequest[R Response](request Request) (R, error) {
 	// do a request
 	var respbody R
 	// client := &http.Client{}
+	// if request.Body != nil {
+	// 	requestbody,err := io.ReadAll(request.Body)
+	// 	if err != nil {
+	// 		return respbody, err
+	// 	}
+	// 	fmt.Println(string(requestbody))
+	// }
 	
 	req, err := http.NewRequest(request.Method, request.Url, request.Body)
 	if err != nil {
@@ -95,7 +102,7 @@ func NewRequest[R Response](request Request) (R, error) {
 	if err != nil {
 		return respbody, err
 	}
-	// fmt.Println(string(bodyText))
+	//fmt.Println(string(bodyText))
 	if _, ok := any(respbody).(struct{}); ok {
 		return respbody, nil
 	}
