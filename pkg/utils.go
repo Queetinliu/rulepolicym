@@ -1,7 +1,6 @@
 package pkg
 
 import (
-	
 	"encoding/json"
 	"fmt"
 	"io"
@@ -19,7 +18,6 @@ const (
 type Printer interface {
 	Print()
 }
-
 
 func HttpClient() *http.Client {
 	client := &http.Client{Timeout: 30 * time.Second}
@@ -54,12 +52,20 @@ type Response interface {
 func NewRequest[R Response](request Request) (R, error) {
 	// do a request
 	var respbody R
+
 	// client := &http.Client{}
-	
+	// print the request.Body for debug
+	if request.Body != nil {
+		bytesbody, err := io.ReadAll(request.Body)
+		if err != nil {
+			return respbody, fmt.Errorf("read request body with err:%w", err)
+		}
+		fmt.Println(string(bytesbody))
+	}
+
 	req, err := http.NewRequest(request.Method, request.Url, request.Body)
 	if err != nil {
 		return respbody, fmt.Errorf("create new request to %s with err:%w", request.Url, err)
-
 	}
 	for k, v := range request.Headers {
 		req.Header.Add(k, v)
@@ -95,7 +101,7 @@ func NewRequest[R Response](request Request) (R, error) {
 	if err != nil {
 		return respbody, err
 	}
-	// fmt.Println(string(bodyText))
+	fmt.Println(string(bodyText))
 	if _, ok := any(respbody).(struct{}); ok {
 		return respbody, nil
 	}

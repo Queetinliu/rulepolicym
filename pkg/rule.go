@@ -10,11 +10,11 @@ import (
 )
 
 type Rule struct {
-	Active_At   int               `json:"active_at"`
+	Actived_At   int               `json:"actived_at"`
 	Annotations map[string]string `json:"annotations"`
 	Code        string            `json:"code"`
-	Create_At   int               `json:"create_at"`
-	Create_By   string            `json:"create_by"`
+	Created_At   int               `json:"created_at"`
+	Created_By   string            `json:"created_by"`
 	Expr        string            `json:"expr"`
 	For         string            `json:"for"`
 	Group_Id    string            `json:"group_id"`

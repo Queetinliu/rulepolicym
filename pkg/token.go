@@ -137,7 +137,6 @@ type SsoResp struct {
 	Access_Token string `json:"access_token"`
 }
 
-
 type AuthResp struct {
 	Token   string  `json:"token"`
 	Account Account `json:"account"`

@@ -6,8 +6,12 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"regexp"
 	"strconv"
 	"text/tabwriter"
+
+	"github.com/goccy/go-yaml"
+	//"gopkg.in/yaml.v3"
 )
 
 func ListRuleGroups(client *http.Client, accesstoken, authtoken string) (RuleGroups, error) {
@@ -34,35 +38,7 @@ func ListRuleGroups(client *http.Client, accesstoken, authtoken string) (RuleGro
 	return respbody, nil
 }
 
-type RuleGroups struct {
-	Data    []RuleGroup `json:"data"`
-	Keyword string      `json:"keyword"`
-	Page    int         `json:"page"`
-	Size    int         `json:"size"`
-	Total   int         `json:"total"`
-}
 
-type RuleGroup struct {
-	Active_At   int               `json:"active_at"`
-	Annotation  map[string]string `json:"annotation"`
-	Built_in    bool              `json:"built_in"`
-	Create_At   int               `json:"create_at"`
-	Create_By   string            `json:"create_by"`
-	Id          string            `json:"id"`
-	Interval    string            `json:"interval"`
-	Keywords    string            `json:"keywords"`
-	Labels      map[string]string `json:"labels"`
-	Name        string            `json:"name"`
-	Notifiers   []string          `json:"notifiers"`
-	Notify_Type string            `json:"notify_type"`
-	Ns          string            `json:"ns"`
-	Operated_By string            `json:"operated_by"`
-	Paused      bool              `json:"paused"`
-	Rules       []Rule            `json:"rules"`
-	Target      string            `json:"target"`
-	Type        string            `json:"type"`
-	Update_At   int               `json:"update_at"`
-}
 
 func (rgs RuleGroups) Print() {
 	w := tabwriter.NewWriter(os.Stdout, 8, 8, 0, '\t', 0)
@@ -106,7 +82,7 @@ func CopyRuleGroup(client *http.Client, accesstoken, authtoken, source, dest str
 	if destrulegroup.Notify_Type == "" {
 		destrulegroup.Notify_Type = "script"
 	}
-	if destrulegroup.Target == "cluster"{
+	if destrulegroup.Target == "cluster" {
 		destrulegroup.Target = "{\"cluster\":\"cluster\"}"
 	}
 
@@ -239,6 +215,171 @@ func ControlRuleGroup(client *http.Client, accesstoken, authtoken, rulegroupname
 				return err
 			}
 		}
+	}
+	return nil
+}
+
+type Annotations struct {
+	Summary     string `yaml:"summary"`
+	Description string `yaml:"description"`
+}
+type RuleLabels struct {
+	Severity string `yaml:"severity"`
+}
+type AlertRule struct {
+	Alert       string `yaml:"alert"`
+	Expr        string `yaml:"expr"`
+	For         string `yaml:"for"`
+	RuleLabels  `yaml:"labels"`
+	Annotations `yaml:"annotations"`
+}
+
+type AlertRuleGroup struct {
+	Name  string      `yaml:"name"`
+	Rules []AlertRule `yaml:"rules"`
+}
+
+type RuleFile struct {
+	Groups []AlertRuleGroup `yaml:"groups"`
+}
+
+type RuleGroups struct {
+	Data    []RuleGroup `json:"data"`
+	Keyword string      `json:"keyword"`
+	Page    int         `json:"page"`
+	Size    int         `json:"size"`
+	Total   int         `json:"total"`
+}
+
+type RuleGroup struct {
+	Active_At   int               `json:"active_at"`
+	Annotations  map[string]string `json:"annotations"`
+	Built_in    bool              `json:"built_in"`
+	Create_At   int               `json:"create_at"`
+	Create_By   string            `json:"create_by"`
+	Id          string            `json:"id"`
+	Interval    string            `json:"interval"`
+	Keywords    string            `json:"keywords"`
+	Labels      map[string]string `json:"labels"`
+	Name        string            `json:"name"`
+	Notifiers   []string          `json:"notifiers"`
+	Notify_Type string            `json:"notify_type"`
+	Ns          string            `json:"ns"`
+	Operated_By string            `json:"operated_by"`
+	Paused      bool              `json:"paused"`
+	Rules       []Rule            `json:"rules"`
+	Target      string            `json:"target"`
+	Type        string            `json:"type"`
+	Update_At   int               `json:"update_at"`
+}
+
+
+
+type CreateRulePayload struct {
+	Name        string            `json:"name"`
+	Expr        string            `json:"expr"`
+	FormExpr    string            `json:"formExpr"`
+	For         string            `json:"for"`
+	ForValue    string            `json:"forValue"`
+	ForUnit     string            `json:"forUnit"`
+	Severity    string            `json:"severity"`
+	Annotations CreateRuleAnnotations `json:"annotations"`
+	Index       int               `json:"__index"`
+}
+
+type CreateRuleAnnotations struct {
+	Summary     string `json:"summary"`
+	Description string `json:"description"`
+}
+
+type CreateRuleGroupPayload struct {
+	Name        string              `json:"name"`
+	Interval    string              `json:"interval"`
+	Keywords    string              `json:"keywords"`
+	Labels      map[string]string   `json:"labels"`
+	Notifiers   []string            `json:"notifiers"`
+	Rules       []CreateRulePayload `json:"rules"`
+	Target     string   `json:"target"`
+	Type        string              `json:"type"`
+	Notify_Type string              `json:"notify_type"`
+	Ns          string              `json:"ns"`
+}
+
+func CreateRuleGroup(client *http.Client, accesstoken, authtoken, rulefilename string) error {
+	rulecontent, err := os.ReadFile(rulefilename)
+	if err != nil {
+		return err
+	}
+	// unmarshal the rulefile
+	var rulefile RuleFile
+	err = yaml.Unmarshal(rulecontent, &rulefile)
+	if err != nil {
+		return err
+	}
+
+	for _, group := range rulefile.Groups {
+		rulespayload := make([]CreateRulePayload, 0)
+		for i, rule := range group.Rules {
+			// use regex from the rule.For to extract the value and unit.
+			// the value is the number part, the unit is the string part.
+			regex := regexp.MustCompile(`(\d+)([a-zA-Z]+)`)
+			matches := regex.FindStringSubmatch(rule.For)
+			if len(matches) != 3 {
+				return fmt.Errorf("invalid for format: %s", rule.For)
+			}
+			if rule.RuleLabels.Severity == "warning" {
+				rule.RuleLabels.Severity = "warn"
+			}
+			fmt.Println(rule.Expr)
+			createrulepayload := CreateRulePayload{
+				Name:     rule.Alert,
+				Expr:     rule.Expr,
+				FormExpr: "",
+				For:      rule.For,
+				ForValue: matches[1],
+				ForUnit:  matches[2],
+				Severity: rule.RuleLabels.Severity,
+				Annotations: CreateRuleAnnotations(rule.Annotations),
+				Index: i,
+			}
+			rulespayload = append(rulespayload, createrulepayload)
+
+		}
+
+		createrulegrouppayload := CreateRuleGroupPayload{
+			Name:      group.Name,
+			Interval:  "10m",
+			Keywords:  "",
+			Labels:    map[string]string{},
+			Notifiers: []string{},
+			Rules:     rulespayload,
+			Target: "{\"cluster\":\"cluster\"}",
+			Type:        "cluster",
+			Notify_Type: "",
+			Ns:          "SYSTEM",
+		}
+		urlpath, err := GetApiMonitorUrl("rule-groups")
+		if err != nil {
+			return err
+		}
+		requestbody, err := json.Marshal(createrulegrouppayload)
+		if err != nil {
+			return err
+		}
+		fmt.Println(string(requestbody))
+		createrulegroupreq := Request{
+			Client:  client,
+			Method:  "POST",
+			Url:     urlpath,
+			Headers: apimonitorheader(accesstoken, authtoken),
+			Body:    bytes.NewReader(requestbody),
+		}
+		createrulegroupreq.Headers["Content-Type"]="application/json"
+		newrulegroup, err := NewRequest[RuleGroup](createrulegroupreq)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("create rulegroup %s success,id is %s\n", newrulegroup.Name, newrulegroup.Id)
 	}
 	return nil
 }
