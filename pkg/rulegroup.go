@@ -86,22 +86,23 @@ func CopyRuleGroup(client *http.Client, accesstoken, authtoken, source, dest str
 		destrulegroup.Target = "{\"cluster\":\"cluster\"}"
 	}
 
-	for i, rules := range destrulegroup.Rules {
-		if rules.Severity != "critical" {
-			destrulegroup.Rules[i].Severity = "critical"
-			_, ok := destrulegroup.Rules[i].Labels["severity"]
-			if ok {
-				destrulegroup.Rules[i].Labels["severity"] = "critical"
-			} else {
-				destrulegroup.Rules[i].Labels["severity"] = "critical"
-			}
-			_, ok = destrulegroup.Rules[i].Annotations["ruleGroupName"]
+	for i := range destrulegroup.Rules {
+		// if rules.Severity != "critical" {
+		// 	destrulegroup.Rules[i].Severity = "critical"
+		// 	_, ok := destrulegroup.Rules[i].Labels["severity"]
+		// 	if ok {
+		// 		destrulegroup.Rules[i].Labels["severity"] = "critical"
+		// 	} else {
+		// 		destrulegroup.Rules[i].Labels["severity"] = "critical"
+		// 	}
+		// }
+			_, ok := destrulegroup.Rules[i].Annotations["ruleGroupName"]
 			if ok {
 				destrulegroup.Rules[i].Annotations["ruleGroupName"] = dest
 			} else {
 				destrulegroup.Rules[i].Annotations["ruleGroupName"] = dest
 			}
-		}
+		
 
 	}
 	destgroupdata, err := json.Marshal(destrulegroup)
@@ -330,7 +331,6 @@ func CreateRuleGroup(client *http.Client, accesstoken, authtoken, rulefilename s
 			if rule.RuleLabels.Severity == "warning" {
 				rule.RuleLabels.Severity = "warn"
 			}
-			fmt.Println(rule.Expr)
 			createrulepayload := CreateRulePayload{
 				Name:     rule.Alert,
 				Expr:     rule.Expr,
@@ -366,7 +366,7 @@ func CreateRuleGroup(client *http.Client, accesstoken, authtoken, rulefilename s
 		if err != nil {
 			return err
 		}
-		fmt.Println(string(requestbody))
+		//fmt.Println(string(requestbody))
 		createrulegroupreq := Request{
 			Client:  client,
 			Method:  "POST",

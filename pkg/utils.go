@@ -1,6 +1,7 @@
 package pkg
 
 import (
+	//"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -54,14 +55,16 @@ func NewRequest[R Response](request Request) (R, error) {
 	var respbody R
 
 	// client := &http.Client{}
-	// print the request.Body for debug
-	if request.Body != nil {
-		bytesbody, err := io.ReadAll(request.Body)
-		if err != nil {
-			return respbody, fmt.Errorf("read request body with err:%w", err)
-		}
-		fmt.Println(string(bytesbody))
-	}
+	// print the request.Body for debug.
+	// if request.Body != nil {
+	// 	bodyBytes, err := io.ReadAll(request.Body)
+	// 	if err != nil {
+	// 		return respbody, fmt.Errorf("read request body with err:%w", err)
+	// 	}
+	// 	fmt.Println(string(bodyBytes))
+	// 	// After reading, we must replace the now-empty body with a new reader.
+	// 	request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+	// }
 
 	req, err := http.NewRequest(request.Method, request.Url, request.Body)
 	if err != nil {
@@ -101,7 +104,7 @@ func NewRequest[R Response](request Request) (R, error) {
 	if err != nil {
 		return respbody, err
 	}
-	fmt.Println(string(bodyText))
+	//fmt.Println(string(bodyText))
 	if _, ok := any(respbody).(struct{}); ok {
 		return respbody, nil
 	}
