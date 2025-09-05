@@ -209,6 +209,8 @@ func ControlRuleGroup(client *http.Client, accesstoken, authtoken, rulegroupname
 	if err != nil {
 		return err
 	}
+	// stop,paused true,the state should be disabled
+	// start,pause false,the state shoule be enabled
 	for _, rule := range rulegroup.Rules {
 		if rule.State != pausemap[paused] {
 			err = ControlRule(client, accesstoken, authtoken, rule.Id, rulegroupid, paused)
